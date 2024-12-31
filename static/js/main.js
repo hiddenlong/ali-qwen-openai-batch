@@ -1,14 +1,7 @@
 import { TaskStatus } from './constants.js';
 import * as taskService from './taskService.js';
 import * as uiRenderer from './uiRenderer.js';
-import { 
-    deleteBatch, 
-    viewBatchDetails, 
-    downloadFile, 
-    deleteFile,
-    loadBatchList,
-    loadFileList
-} from './batchService.js';
+import * as batchService from './batchService.js';
 
 // 获取任务列表
 async function fetchTasks() {
@@ -157,7 +150,6 @@ window.handleFileUpload = handleFileUpload;
 
 // Tab 切换控制
 function setupTabs() {
-    console.log('Setting up tabs...');
     const tabs = {
         tasks: document.getElementById('tasksTab'),
         batches: document.getElementById('batchesTab'),
@@ -167,7 +159,6 @@ function setupTabs() {
     // 检查元素是否存在
     for (const [name, element] of Object.entries(tabs)) {
         if (!element) {
-            console.error(`${name} tab element not found`);
             return;
         }
     }
@@ -183,7 +174,6 @@ function setupTabs() {
 
 // 修改 showTab 函数
 async function showTab(tabName) {
-    console.log('Switching to tab:', tabName);
     const tasksTab = document.getElementById('tasksTab');
     const batchesTab = document.getElementById('batchesTab');
     const filesTab = document.getElementById('filesTab');
@@ -205,25 +195,24 @@ async function showTab(tabName) {
         case 'batches':
             batchesTab.classList.add('active');
             batchesContent.classList.remove('hidden');
-            const batches = await loadBatchList();  // 获取批处理数据
-            uiRenderer.renderBatches(batches);  // 渲染批处理数据
+            const batches = await batchService.loadBatchList();
+            uiRenderer.renderBatches(batches);
+            uiRenderer.setupFilterHandlers(batches.data || []);
             break;
         case 'files':
             filesTab.classList.add('active');
             filesContent.classList.remove('hidden');
-            const files = await loadFileList();  // 获取文件数据
+            const files = await batchService.loadFileList();  // 获取文件数据
             uiRenderer.renderFiles(files);  // 渲染文件数据
             break;
     }
 }
 
 // 将这些方法添加到全局作用域
-window.deleteBatch = deleteBatch;
-window.viewBatchDetails = viewBatchDetails;
-window.downloadFile = downloadFile;
-window.deleteFile = deleteFile;
-window.loadBatchList = loadBatchList;
-window.loadFileList = loadFileList;
+// window.downloadFile = downloadFile;
+// window.deleteFile = deleteFile;
+// window.loadBatchList = loadBatchList;
+// window.loadFileList = loadFileList;
 
 // 在页面加载完成后初始化所有功能
 document.addEventListener('DOMContentLoaded', () => {
@@ -231,4 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
     fetchTasks(); // 确保初始加载任务列表
 });
+
+// 添加到全局作用域
+window.downloadFile = (fileId) => {
+    batchService.downloadFile(fileId);
+};
 

@@ -6,3 +6,5 @@ pip install sqlalchemy
 pip install pydantic
 pip install aiofiles
 pip install python-multipart
+pip install apscheduler
+

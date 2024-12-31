@@ -69,22 +69,32 @@ class BatchProcessor:
             self.logger.error(f"Error creating batch: {str(e)}")
             raise
     
-    async def download_results(self, output_file_id, output_path="result.jsonl") -> str:
+    async def download_results(self, file_id: str, output_path: str) -> str:
         """
-        下载Batch任务结果
+        下载文件
         
         Args:
-            output_file_id: 输出文件ID
+            file_id: 文件ID
             output_path: 保存结果的本地文件路径
             
         Returns:
             str: 文件保存路径
         """
-        content = self.client.files.content(output_file_id)
-        # 保存结果文件至本地
-        content.write_to_file(output_path)
-        self.logger.info(f"download result file: {output_path}")
-        return output_path
+        try:
+            self.logger.info(f"Downloading file: {file_id}")
+            # 先获取文件信息
+            file_info = self.client.files.retrieve(file_id)
+            
+            # 获取文件内容
+            content = self.client.files.content(file_id)
+            
+            # 保存文件
+            content.write_to_file(output_path)
+            self.logger.info(f"Successfully downloaded file to: {output_path}")
+            return output_path
+        except Exception as e:
+            self.logger.error(f"Error downloading file {file_id}: {str(e)}")
+            raise
 
     async def download_errors(self, error_file_id, error_path="error.jsonl") -> str:
         """下载Batch任务失败结果"""

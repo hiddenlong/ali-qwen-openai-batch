@@ -337,6 +337,25 @@ function renderBatchItem(batch) {
         `;
     };
 
+    // 添加文件下载按钮的辅助函数
+    const renderFileIdWithDownload = (fileId, label) => {
+        if (!fileId) return `<p class="text-gray-600">${label}: 无</p>`;
+        return `
+            <div class="flex items-center gap-2">
+                <p class="text-gray-600">${label}: ${fileId}</p>
+                <button 
+                    onclick="window.downloadFile('${fileId}')" 
+                    class="text-blue-600 hover:text-blue-800"
+                    title="下载文件">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+    };
+
     return `
         <div class="bg-white p-4 rounded-lg shadow mb-4">
             <div class="flex flex-col gap-3">
@@ -344,10 +363,6 @@ function renderBatchItem(batch) {
                     <div>
                         <h3 class="font-bold text-lg">批处理任务 ID: ${batch.id}</h3>
                         <p class="text-sm ${getStatusClass(batch.status)}">状态: ${batch.status}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="viewBatchDetails('${batch.id}')" class="btn btn-blue px-4 py-2">查看详情</button>
-                        <button onclick="deleteBatch('${batch.id}')" class="btn btn-red px-4 py-2">删除</button>
                     </div>
                 </div>
 
@@ -359,9 +374,9 @@ function renderBatchItem(batch) {
                         ${batch.failed_at ? `<p class="text-red-600">失败时间: ${formatTimestamp(batch.failed_at)}</p>` : ''}
                     </div>
                     <div>
-                        <p class="text-gray-600">输入文件: ${batch.input_file_id || '无'}</p>
-                        <p class="text-gray-600">输出文件: ${batch.output_file_id || '无'}</p>
-                        <p class="text-gray-600">错误文件: ${batch.error_file_id || '无'}</p>
+                        ${renderFileIdWithDownload(batch.input_file_id, '输入文件')}
+                        ${renderFileIdWithDownload(batch.output_file_id, '输出文件')}
+                        ${renderFileIdWithDownload(batch.error_file_id, '错误文件')}
                         <p class="text-gray-600">处理窗口: ${batch.completion_window}</p>
                     </div>
                 </div>
@@ -386,125 +401,69 @@ function renderBatchItem(batch) {
 
 // 修改渲染筛选后的批处理列表函数
 function renderFilteredBatches(filteredBatches) {
-    const batchesContainer = document.getElementById('batchesContent');
+    const batchListContent = document.getElementById('batchListContent');
+    const batchStats = document.getElementById('batchStats');
     
-    // 保存筛选区域的HTML
-    const filterArea = batchesContainer.querySelector('div:first-child').outerHTML;
+    // 更新状态统计
+    if (batchStats) {
+        batchStats.innerHTML = getBatchStatusStats(filteredBatches);
+    }
     
+    // 更新批处理列表内容
     if (filteredBatches.length === 0) {
-        batchesContainer.innerHTML = filterArea + '<p class="text-gray-500 text-center py-4">没有符合条件的批处理任务</p>';
+        batchListContent.innerHTML = '<p class="text-gray-500 text-center py-4">没有符合条件的批处理任务</p>';
         return;
     }
 
-    const batchesList = filteredBatches.map(renderBatchItem).join('');
-    batchesContainer.innerHTML = filterArea + batchesList;
+    batchListContent.innerHTML = filteredBatches.map(renderBatchItem).join('');
 }
 
 // 修改原始的渲染批处理列表函数
 export function renderBatches(batchesResponse) {
     const batches = batchesResponse?.data || [];
-    const batchesContainer = document.getElementById('batchesContent');
+    const batchListContent = document.getElementById('batchListContent');
+    const batchStats = document.getElementById('batchStats');
     
-    // 添加筛选和统计区域
-    const filterAndStats = `
-        <div class="mb-6 space-y-4">
-            <div class="flex flex-wrap gap-4 items-center">
-                <div class="flex items-center gap-2">
-                    <label class="text-sm text-gray-600">时间范围：</label>
-                    <input type="date" id="startDate" class="border rounded px-2 py-1 text-sm">
-                    <span class="text-gray-500">至</span>
-                    <input type="date" id="endDate" class="border rounded px-2 py-1 text-sm">
-                </div>
-                <div class="flex items-center gap-2">
-                    <label class="text-sm text-gray-600">状态：</label>
-                    <select id="statusFilter" class="border rounded px-2 py-1 text-sm">
-                        <option value="">全部</option>
-                        <option value="completed">已完成</option>
-                        <option value="in_progress">处理中</option>
-                        <option value="failed">失败</option>
-                        <option value="cancelled">已取消</option>
-                    </select>
-                </div>
-                <button id="applyFilter" class="bg-blue-500 text-white px-4 py-1 rounded text-sm hover:bg-blue-600">
-                    应用筛选
-                </button>
-            </div>
-            
-            <div class="flex items-center gap-4">
-                <span class="text-sm text-gray-600">状态统计：</span>
-                <div class="flex flex-wrap gap-2">
-                    ${getBatchStatusStats(batches)}
-                </div>
-            </div>
-        </div>
-    `;
-
+    // 更新状态统计
+    if (batchStats) {
+        batchStats.innerHTML = getBatchStatusStats(batches);
+    }
+    
+    // 更新批处理列表内容
     if (!batches || batches.length === 0) {
-        batchesContainer.innerHTML = filterAndStats + '<p class="text-gray-500 text-center py-4">暂无批处理任务</p>';
+        batchListContent.innerHTML = '<p class="text-gray-500 text-center py-4">暂无批处理任务</p>';
         return;
     }
-
-    const batchesList = batches.map(renderBatchItem).join('');
-    batchesContainer.innerHTML = filterAndStats + batchesList;
-
-    // 添加筛选功能
-    setupFilterHandlers(batches);
+    
+    batchListContent.innerHTML = batches.map(renderBatchItem).join('');
 }
 
-
-// 添加筛选处理函数
-function setupFilterHandlers(originalBatches) {
+// 修改 setupFilterHandlers 函数，在 main.js 中调用一次即可
+export function setupFilterHandlers(originalBatches) {
     const startDate = document.getElementById('startDate');
     const endDate = document.getElementById('endDate');
     const statusFilter = document.getElementById('statusFilter');
     const applyFilter = document.getElementById('applyFilter');
 
-    // 设置默认日期范围（最近30天）
+    // 设置默认日期范围（最近3天）
     const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 30);
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(today.getDate() - 3);
     
-    startDate.value = thirtyDaysAgo.toISOString().split('T')[0];
+    startDate.value = threeDaysAgo.toISOString().split('T')[0];
     endDate.value = today.toISOString().split('T')[0];
 
     applyFilter.addEventListener('click', () => {
-        // 添加调试日志
-        console.log('原始数据:', originalBatches);
-        
         const start = startDate.value ? new Date(startDate.value).getTime() / 1000 : null;
         const end = endDate.value ? new Date(endDate.value).getTime() / 1000 : null;
         const status = statusFilter.value;
         
-        // 打印筛选条件
-        console.log('筛选条件:', {
-            start,
-            end,
-            status,
-            startDate: startDate.value,
-            endDate: endDate.value
-        });
-
         const filteredBatches = originalBatches.filter(batch => {
-            // 时间筛选：只有当开始和结束时间都设置了才进行筛选
             const timeMatch = (!start || !end) ? true : 
                 (batch.created_at >= start && batch.created_at <= end);
-            // 状态筛选：只有当选择了状态时才进行筛选
             const statusMatch = !status || batch.status === status;
-            
-            // 打印每个批次的筛选结果
-            console.log('批次筛选结果:', {
-                batchId: batch.id,
-                created_at: batch.created_at,
-                status: batch.status,
-                timeMatch,
-                statusMatch
-            });
-            
             return timeMatch && statusMatch;
         });
-
-        // 打印筛选后的结果
-        console.log('筛选后的数据:', filteredBatches);
 
         renderFilteredBatches(filteredBatches);
     });

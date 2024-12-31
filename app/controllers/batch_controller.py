@@ -97,19 +97,32 @@ class BatchController:
             """下载文件"""
             try:
                 self.logger.info(f"Downloading file: {file_id}")
+                
                 # 创建下载目录
                 downloads_dir = Path("downloads")
                 downloads_dir.mkdir(exist_ok=True)
-                output_path = downloads_dir / f"{file_id}.jsonl"
                 
-                # 下载文件到临时目录
-                file_path = await self.batch_processor.download_results(file_id, str(output_path))
+                # 先获取文件信息以确定文件名和类型
+                file_info = self.batch_processor.client.files.retrieve(file_id)
+                filename = file_info.filename or f"{file_id}.jsonl"
                 
-                # 检查文件是否存在
+                output_path = downloads_dir / filename
+                
+                # 下载文件
+                try:
+                    file_path = await self.batch_processor.download_results(file_id, str(output_path))
+                except Exception as e:
+                    self.logger.error(f"Download failed: {str(e)}")
+                    if "406" in str(e):
+                        raise HTTPException(
+                            status_code=406,
+                            detail="File is not available for download or is in an invalid state"
+                        )
+                    raise
+                    
                 if not os.path.exists(file_path):
                     raise HTTPException(status_code=404, detail="File not found")
                     
-                # 检查文件大小
                 if os.path.getsize(file_path) == 0:
                     raise HTTPException(status_code=500, detail="File is empty")
                     
@@ -123,14 +136,19 @@ class BatchController:
                     # 传输完成后删除临时文件
                     os.unlink(file_path)
                 
+                # 设置正确的 Content-Type
+                content_type = 'application/json' if filename.endswith('.jsonl') else 'text/plain'
+                
                 # 返回流式响应
                 return StreamingResponse(
                     file_stream(),
-                    media_type='application/json',
+                    media_type=content_type,
                     headers={
-                        'Content-Disposition': f'attachment; filename="{file_id}.jsonl"'
+                        'Content-Disposition': f'attachment; filename="{filename}"'
                     }
                 )
+            except HTTPException:
+                raise
             except Exception as e:
                 self.logger.error(f"Error downloading file: {str(e)}", exc_info=True)
                 raise HTTPException(status_code=500, detail=str(e))
