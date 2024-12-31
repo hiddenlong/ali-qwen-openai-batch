@@ -23,9 +23,16 @@
 
 运行程序
 
-
+```
+cd /xxx/xxx/ali-qwen-openai-batch
+python -m app.main
+```
 
 开始操作
+
+```
+访问 http://127.0.0.1:8123
+```
 
 
 
