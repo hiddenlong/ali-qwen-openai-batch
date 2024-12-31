@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批处理任务管理</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    typography: {
+                        DEFAULT: {
+                            css: {
+                                maxWidth: 'none',
+                                color: '#333',
+                                a: {
+                                    color: '#3182ce',
+                                    '&:hover': {
+                                        color: '#2c5282',
+                                    },
+                                },
+                                'code::before': {
+                                    content: '""',
+                                },
+                                'code::after': {
+                                    content: '""',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="bg-gray-100">
+    <!-- 添加消息通知容器 -->
+    <div id="messageContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">批处理任务管理系统</h1>
+        
+        <!-- 创建任务表单 -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">创建任务</h2>
+            <div class="space-y-4">
+                <textarea id="taskContent" 
+                         class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                         rows="4" 
+                         placeholder="输入任务内容"></textarea>
+                <input type="text" 
+                       id="systemPrompt"
+                       class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                       value="解析小说，罗列尽可能详细的大纲包括章节的人物关系，事情的发展，核心内容，以及所有章节下来的事情故事发展的线索以及如何推动事情的发展"
+                       placeholder="输入System Prompt（可选）">
+                <div class="flex space-x-4">
+                    <button id="createSingleTaskBtn" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <span id="createBtnText">创建单个任务</span>
+                        <svg id="createBtnLoading" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                    <label id="uploadLabel" class="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <span id="uploadBtnText">上传文件创建任务</span>
+                        <svg id="uploadBtnLoading" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <input type="file" 
+                               id="fileUpload" 
+                               multiple 
+                               accept=".txt"
+                               class="hidden" 
+                               onChange="handleFileUpload(event)">
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 任务列表 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">任务列表</h2>
+                <div class="flex space-x-2">
+                    <button id="localTab" 
+                            class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white">
+                        本地缓存
+                    </button>
+                    <button id="remoteTab" 
+                            class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">
+                        远程查询
+                    </button>
+                </div>
+            </div>
+            <div id="taskList" class="space-y-4">
+                <!-- 任务列表将通过 JavaScript 动态填充 -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/static/js/main.js"></script>
+</body>
+</html> 
