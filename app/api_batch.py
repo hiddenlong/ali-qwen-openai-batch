@@ -4,47 +4,9 @@ from openai import OpenAI
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from uuid import uuid4
-from dataclasses import dataclass
 from .utils.logger import setup_logger
+from .models.batch_entity import BatchResponse
 
-@dataclass
-class RequestCounts:
-    total: int
-    completed: int
-    failed: int
-
-@dataclass
-class BatchResponse:
-    """批处理响应数据类"""
-    id: str
-    object: str
-    endpoint: str
-    errors: Optional[str]
-    input_file_id: str
-    completion_window: str
-    status: str
-    output_file_id: Optional[str]
-    error_file_id: Optional[str]
-    created_at: int
-    in_progress_at: Optional[int]
-    expires_at: Optional[int]
-    finalizing_at: Optional[int]
-    completed_at: Optional[int]
-    failed_at: Optional[int]
-    expired_at: Optional[int]
-    cancelling_at: Optional[int]
-    cancelled_at: Optional[int]
-    request_counts: RequestCounts
-    metadata: Dict
-
-    @classmethod
-    def from_json(cls, data: Dict) -> 'BatchResponse':
-        """从JSON数据创建BatchResponse实例"""
-        request_counts = RequestCounts(**data.get('request_counts', {}))
-        return cls(
-            **{k: v for k, v in data.items() if k != 'request_counts'},
-            request_counts=request_counts
-        )
 
 class BatchProcessor:
     def __init__(self, api_key: Optional[str] = None, base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"):
@@ -173,3 +135,9 @@ class BatchProcessor:
         删除文件
         """
         return self.client.files.delete(file_id)
+    
+    def file_list(self) -> Dict[str, Any]:
+        """
+        获取文件列表
+        """
+        return self.client.files.list()

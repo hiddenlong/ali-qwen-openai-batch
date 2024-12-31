@@ -1,6 +1,6 @@
 from ..models.database_models import TaskORM
 from ..database.database import SessionLocal
-from ..models.task import Task
+from ..models.task_entity import Task
 from typing import List, Optional
 
 class TaskRepository:

@@ -53,6 +53,7 @@
                 <input type="text" 
                        id="systemPrompt"
                        class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                       value="解析小说，罗列尽可能详细的大纲包括章节的人物关系，事情的发展，核心内容，以及所有章节下来的事情故事发展的线索以及如何推动事情的发展"
                        placeholder="输入System Prompt（可选）">
                 <div class="flex space-x-4">
                     <button id="createSingleTaskBtn" 
@@ -80,23 +81,56 @@
             </div>
         </div>
         
-        <!-- 任务列表 -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold">任务列表</h2>
-                <div class="flex space-x-2">
-                    <button id="localTab" 
-                            class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white">
-                        本地缓存
+        <!-- 添加 Tab 导航 -->
+        <div class="mb-4">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex">
+                    <button id="tasksTab" 
+                            class="tab-button active py-2 px-4 border-b-2 border-blue-500 font-medium text-blue-600">
+                        任务列表
                     </button>
-                    <button id="remoteTab" 
-                            class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">
-                        远程查询
+                    <button id="batchesTab" 
+                            class="tab-button py-2 px-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        批处理列表
                     </button>
+                    <button id="filesTab" 
+                            class="tab-button py-2 px-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        文件列表
+                    </button>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Tab 内容区域 -->
+        <div id="tabContents">
+            <!-- 任务列表 Tab -->
+            <div id="tasksContent" class="tab-content bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">任务列表</h2>
+                </div>
+                <div id="taskList" class="space-y-4">
+                    <!-- 任务列表将通过 JavaScript 动态填充 -->
                 </div>
             </div>
-            <div id="taskList" class="space-y-4">
-                <!-- 任务列表将通过 JavaScript 动态填充 -->
+
+            <!-- 批处理列表 Tab -->
+            <div id="batchesContent" class="tab-content hidden bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">批处理列表</h2>
+                </div>
+                <div id="batchList" class="space-y-4">
+                    <!-- 批处理列表将通过 JavaScript 动态填充 -->
+                </div>
+            </div>
+
+            <!-- 文件列表 Tab -->
+            <div id="filesContent" class="tab-content hidden bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">文件列表</h2>
+                </div>
+                <div id="fileList" class="space-y-4">
+                    <!-- 文件列表将通过 JavaScript 动态填充 -->
+                </div>
             </div>
         </div>
     </div>

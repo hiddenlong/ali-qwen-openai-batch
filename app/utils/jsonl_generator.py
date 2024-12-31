@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 from uuid import uuid4
 from ..utils.logger import setup_logger
 import os
-from ..models.task import Task
+from ..models.task_entity import Task
 
 class JsonlGenerator:
     def __init__(self, model: str = "qwen-turbo"):

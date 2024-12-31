@@ -1,7 +1,6 @@
 import asyncio
-from datetime import datetime
 from ..services.task_service import TaskService
-from ..models.task import TaskStatus
+from ..models.task_entity import TaskStatus
 from ..utils.logger import setup_logger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import json

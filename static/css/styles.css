@@ -41,4 +41,23 @@
 
 .status-cancelled {
     @apply bg-gray-100 text-gray-800;
+}
+
+.tab-button {
+    position: relative;
+    transition: all 0.3s;
+}
+
+.tab-button.active {
+    color: #3B82F6; /* blue-600 */
+    border-bottom-color: #3B82F6;
+}
+
+.tab-button:not(.active) {
+    color: #6B7280; /* gray-500 */
+    border-bottom-color: transparent;
+}
+
+.hidden {
+    display: none !important;
 } 

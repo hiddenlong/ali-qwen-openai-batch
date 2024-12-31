@@ -6,7 +6,7 @@ import aiofiles
 
 from ..api_batch import BatchProcessor
 from ..services.task_service import TaskService
-from ..models.task import Task
+from ..models.task_entity import Task
 from ..utils.logger import setup_logger
 import os
 

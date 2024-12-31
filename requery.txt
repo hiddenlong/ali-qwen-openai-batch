@@ -1,0 +1,8 @@
+pip install openai
+pip install python-dotenv
+pip install requests
+pip install fastapi uvicorn
+pip install sqlalchemy
+pip install pydantic
+pip install aiofiles
+pip install python-multipart

@@ -3,13 +3,26 @@ import { marked } from './marked.esm.js';
 
 export function renderTasks(tasks) {
     const taskList = document.getElementById('taskList');
+    if (!taskList) {
+        console.error('找不到taskList元素');
+        return;
+    }
+
     if (!Array.isArray(tasks)) {
         console.error('任务数据格式错误:', tasks);
         taskList.innerHTML = '<p class="text-red-500">加载任务列表失败</p>';
         return;
     }
 
-    taskList.innerHTML = tasks.map(task => {
+    // 清空现有内容
+    taskList.innerHTML = '';
+
+    if (tasks.length === 0) {
+        taskList.innerHTML = '<p class="text-gray-500 text-center py-4">暂无任务</p>';
+        return;
+    }
+
+    const taskElements = tasks.map(task => {
         // 确保 task 不为 null
         if (!task) return '';
         
@@ -21,17 +34,25 @@ export function renderTasks(tasks) {
         const result = task.result || '';
         
         return `
-            <div class="bg-white p-4 rounded-lg shadow mb-4">
+            <div class="bg-white p-4 rounded-lg shadow mb-4 border border-gray-200">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
                         <div class="text-sm text-gray-500">任务ID: ${taskId}</div>
                         <div class="mt-2 text-gray-600">
-                            <p>提示词: ${task.system_prompt && task.system_prompt.length > 100 ? task.system_prompt.slice(0, 100) + '...' : task.system_prompt}</p>
+                            ${task.system_prompt ? `
+                                <p class="mb-2">提示词: ${task.system_prompt.length > 100 ? 
+                                    task.system_prompt.slice(0, 100) + '...' : 
+                                    task.system_prompt}</p>
+                            ` : ''}
                             <p>内容: ${content.length > 20 ? content.slice(0, 20) + '...' : content}</p>
-                            ${batchId ? `<p class="text-sm text-gray-500">批次ID: ${batchId}</p>` : ''}
-                            ${result ? `<p class="mt-2">结果: 
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800 animate-pulse">
-                                可查看</span></p>` : ''}
+                            ${batchId ? `<p class="text-sm text-gray-500 mt-1">批次ID: ${batchId}</p>` : ''}
+                            ${result ? `
+                                <p class="mt-2">结果: 
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                        可查看
+                                    </span>
+                                </p>
+                            ` : ''}
                         </div>
                     </div>
                     <div class="ml-4">
@@ -41,10 +62,16 @@ export function renderTasks(tasks) {
                 ${renderTaskButtons(task)}
             </div>
         `;
-    }).join('');
+    });
+
+    // 将所有任务元素添加到列表中
+    taskList.innerHTML = taskElements.join('');
+
+    // 添加调试日志
+    console.log(`已渲染 ${tasks.length} 个任务`);
 }
 
-function getStatusClass(status) {
+export function getStatusClass(status) {
     const statusClasses = {
         'validating': 'bg-yellow-100 text-yellow-800',
         'failed': 'bg-red-100 text-red-800',
@@ -260,3 +287,279 @@ export function showBatchInfo(batchInfo) {
     
     const drawer = showDrawer('批处理详情', content);
 } 
+
+
+// 添加状态统计函数
+function getBatchStatusStats(batches) {
+    const stats = batches.reduce((acc, batch) => {
+        acc[batch.status] = (acc[batch.status] || 0) + 1;
+        return acc;
+    }, {});
+
+    const statusTextMap = {
+        'completed': '已完成',
+        'in_progress': '处理中',
+        'failed': '失败',
+        'cancelled': '已取消'
+    };
+
+    return Object.entries(stats)
+        .filter(([_, count]) => count > 0)
+        .map(([status, count]) => `
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusClass(status)} bg-opacity-10">
+                ${statusTextMap[status] || status}: ${count}
+            </span>
+        `).join(' ');
+}
+
+// 将批处理渲染逻辑抽取为独立函数
+function renderBatchItem(batch) {
+    const formatTimestamp = (timestamp) => {
+        return timestamp ? new Date(timestamp * 1000).toLocaleString() : '无';
+    };
+
+    const getProgressBar = (counts) => {
+        const total = counts.total;
+        const completed = counts.completed;
+        const failed = counts.failed;
+        const completedPercent = (completed / total * 100).toFixed(1);
+        const failedPercent = (failed / total * 100).toFixed(1);
+
+        return `
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: ${completedPercent}%"></div>
+            </div>
+            <div class="text-sm">
+                <span class="text-green-600">完成: ${completed}(${completedPercent}%)</span>
+                ${failed > 0 ? `<span class="text-red-600 ml-2">失败: ${failed}(${failedPercent}%)</span>` : ''}
+                <span class="text-gray-600 ml-2">总数: ${total}</span>
+            </div>
+        `;
+    };
+
+    return `
+        <div class="bg-white p-4 rounded-lg shadow mb-4">
+            <div class="flex flex-col gap-3">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-lg">批处理任务 ID: ${batch.id}</h3>
+                        <p class="text-sm ${getStatusClass(batch.status)}">状态: ${batch.status}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="viewBatchDetails('${batch.id}')" class="btn btn-blue px-4 py-2">查看详情</button>
+                        <button onclick="deleteBatch('${batch.id}')" class="btn btn-red px-4 py-2">删除</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-gray-600">创建时间: ${formatTimestamp(batch.created_at)}</p>
+                        <p class="text-gray-600">开始处理: ${formatTimestamp(batch.in_progress_at)}</p>
+                        <p class="text-gray-600">完成时间: ${formatTimestamp(batch.completed_at)}</p>
+                        ${batch.failed_at ? `<p class="text-red-600">失败时间: ${formatTimestamp(batch.failed_at)}</p>` : ''}
+                    </div>
+                    <div>
+                        <p class="text-gray-600">输入文件: ${batch.input_file_id || '无'}</p>
+                        <p class="text-gray-600">输出文件: ${batch.output_file_id || '无'}</p>
+                        <p class="text-gray-600">错误文件: ${batch.error_file_id || '无'}</p>
+                        <p class="text-gray-600">处理窗口: ${batch.completion_window}</p>
+                    </div>
+                </div>
+
+                ${batch.request_counts ? `
+                    <div class="mt-2">
+                        <p class="font-semibold mb-1">处理进度:</p>
+                        ${getProgressBar(batch.request_counts)}
+                    </div>
+                ` : ''}
+
+                ${batch.errors ? `
+                    <div class="mt-2 text-red-600">
+                        <p class="font-semibold">错误信息:</p>
+                        <p>${batch.errors}</p>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// 修改渲染筛选后的批处理列表函数
+function renderFilteredBatches(filteredBatches) {
+    const batchesContainer = document.getElementById('batchesContent');
+    
+    // 保存筛选区域的HTML
+    const filterArea = batchesContainer.querySelector('div:first-child').outerHTML;
+    
+    if (filteredBatches.length === 0) {
+        batchesContainer.innerHTML = filterArea + '<p class="text-gray-500 text-center py-4">没有符合条件的批处理任务</p>';
+        return;
+    }
+
+    const batchesList = filteredBatches.map(renderBatchItem).join('');
+    batchesContainer.innerHTML = filterArea + batchesList;
+}
+
+// 修改原始的渲染批处理列表函数
+export function renderBatches(batchesResponse) {
+    const batches = batchesResponse?.data || [];
+    const batchesContainer = document.getElementById('batchesContent');
+    
+    // 添加筛选和统计区域
+    const filterAndStats = `
+        <div class="mb-6 space-y-4">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-gray-600">时间范围：</label>
+                    <input type="date" id="startDate" class="border rounded px-2 py-1 text-sm">
+                    <span class="text-gray-500">至</span>
+                    <input type="date" id="endDate" class="border rounded px-2 py-1 text-sm">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-gray-600">状态：</label>
+                    <select id="statusFilter" class="border rounded px-2 py-1 text-sm">
+                        <option value="">全部</option>
+                        <option value="completed">已完成</option>
+                        <option value="in_progress">处理中</option>
+                        <option value="failed">失败</option>
+                        <option value="cancelled">已取消</option>
+                    </select>
+                </div>
+                <button id="applyFilter" class="bg-blue-500 text-white px-4 py-1 rounded text-sm hover:bg-blue-600">
+                    应用筛选
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-600">状态统计：</span>
+                <div class="flex flex-wrap gap-2">
+                    ${getBatchStatusStats(batches)}
+                </div>
+            </div>
+        </div>
+    `;
+
+    if (!batches || batches.length === 0) {
+        batchesContainer.innerHTML = filterAndStats + '<p class="text-gray-500 text-center py-4">暂无批处理任务</p>';
+        return;
+    }
+
+    const batchesList = batches.map(renderBatchItem).join('');
+    batchesContainer.innerHTML = filterAndStats + batchesList;
+
+    // 添加筛选功能
+    setupFilterHandlers(batches);
+}
+
+
+// 添加筛选处理函数
+function setupFilterHandlers(originalBatches) {
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    const statusFilter = document.getElementById('statusFilter');
+    const applyFilter = document.getElementById('applyFilter');
+
+    // 设置默认日期范围（最近30天）
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    startDate.value = thirtyDaysAgo.toISOString().split('T')[0];
+    endDate.value = today.toISOString().split('T')[0];
+
+    applyFilter.addEventListener('click', () => {
+        // 添加调试日志
+        console.log('原始数据:', originalBatches);
+        
+        const start = startDate.value ? new Date(startDate.value).getTime() / 1000 : null;
+        const end = endDate.value ? new Date(endDate.value).getTime() / 1000 : null;
+        const status = statusFilter.value;
+        
+        // 打印筛选条件
+        console.log('筛选条件:', {
+            start,
+            end,
+            status,
+            startDate: startDate.value,
+            endDate: endDate.value
+        });
+
+        const filteredBatches = originalBatches.filter(batch => {
+            // 时间筛选：只有当开始和结束时间都设置了才进行筛选
+            const timeMatch = (!start || !end) ? true : 
+                (batch.created_at >= start && batch.created_at <= end);
+            // 状态筛选：只有当选择了状态时才进行筛选
+            const statusMatch = !status || batch.status === status;
+            
+            // 打印每个批次的筛选结果
+            console.log('批次筛选结果:', {
+                batchId: batch.id,
+                created_at: batch.created_at,
+                status: batch.status,
+                timeMatch,
+                statusMatch
+            });
+            
+            return timeMatch && statusMatch;
+        });
+
+        // 打印筛选后的结果
+        console.log('筛选后的数据:', filteredBatches);
+
+        renderFilteredBatches(filteredBatches);
+    });
+}
+
+// 修改渲染文件列表的函数
+export function renderFiles(filesResponse) {
+    const files = filesResponse?.data || [];
+    const filesContainer = document.getElementById('filesContent');
+    
+    if (!files || files.length === 0) {
+        filesContainer.innerHTML = '<p class="text-gray-500 text-center py-4">暂无文件</p>';
+        return;
+    }
+
+    // const getStatusClass = (status) => {
+    //     switch(status) {
+    //         case 'processed': return 'text-green-600';
+    //         case 'processing': return 'text-yellow-600';
+    //         case 'failed': return 'text-red-600';
+    //         default: return 'text-gray-600';
+    //     }
+    // };
+
+    const formatFileSize = (bytes) => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    };
+
+    const filesList = files.map(file => `
+        <div class="bg-white p-4 rounded-lg shadow mb-4">
+            <div class="flex justify-between items-start">
+                <div class="flex-grow">
+                    <h3 class="font-bold text-lg mb-2">${file.filename}</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-600">文件ID: <span class="font-mono">${file.id}</span></p>
+                            <p class="text-gray-600">大小: ${formatFileSize(file.bytes)}</p>
+                            <p class="text-gray-600">用途: ${file.purpose}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">创建时间: ${new Date(file.created_at * 1000).toLocaleString()}</p>
+                            <p class="${getStatusClass(file.status)}">状态: ${file.status}</p>
+                            ${file.status_details ? `<p class="text-gray-600">详情: ${file.status_details}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <button onclick="downloadFile('${file.id}')" class="btn btn-blue px-4 py-2">下载</button>
+                    <button onclick="deleteFile('${file.id}')" class="btn btn-red px-4 py-2">删除</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    filesContainer.innerHTML = filesList;
+}

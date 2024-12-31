@@ -1,8 +1,8 @@
 import uuid
 import json
 from datetime import datetime
-from typing import List, Optional, Dict
-from ..models.task import Task, TaskStatus
+from typing import List, Optional
+from ..models.task_entity import Task, TaskStatus
 from ..utils.jsonl_generator import JsonlGenerator
 from ..utils.logger import setup_logger
 from ..api_batch import BatchProcessor

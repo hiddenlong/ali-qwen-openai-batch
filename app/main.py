@@ -9,6 +9,7 @@ from .schedulers.batch_scheduler import BatchScheduler
 from .controllers.task_controller import TaskController
 from .database.database import create_tables
 from contextlib import asynccontextmanager
+from .factory import ApplicationFactory
 
 
 # 创建数据库表
@@ -70,12 +71,15 @@ async def root():
 static_dir = Path(__file__).resolve().parent.parent / "static"
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-# 注册 TaskController
-task_controller = TaskController()
-app.include_router(task_controller.router)
+# 使用 ApplicationFactory 创建控制器和调度器
+factory = ApplicationFactory()
+task_controller = factory.create_task_controller()
+batch_controller = factory.create_batch_controller()
+scheduler = factory.create_batch_scheduler()
 
-# 启动调度器
-scheduler = BatchScheduler()
+# 注册路由
+app.include_router(task_controller.router)
+app.include_router(batch_controller.router)
 
 
 if __name__ == "__main__":
