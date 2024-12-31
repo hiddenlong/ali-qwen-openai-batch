@@ -8,6 +8,9 @@ bin-release/
 .settings/
 .env
 .venv
+downloads/
+results/
+temp/
 */.venv/
 */__pycache__/
 */*/__pycache__/
