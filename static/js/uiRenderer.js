@@ -278,7 +278,7 @@ export function showBatchInfo(batchInfo) {
                 ${batchInfo.error ? `
                     <div class="mt-4">
                         <h4 class="font-semibold text-red-600 mb-2">错误信息:</h4>
-                        <pre class="bg-red-50 p-3 rounded text-red-700">${batchInfo.error}</pre>
+                        ${renderErrorContent(batchInfo.error)}
                     </div>
                 ` : ''}
             </div>
@@ -310,6 +310,12 @@ function getBatchStatusStats(batches) {
                 ${statusTextMap[status] || status}: ${count}
             </span>
         `).join(' ');
+}
+
+// 添加新的通用错误渲染函数
+function renderErrorContent(errorData) {
+    // 如果没有预期的结构，显示格式化的 JSON
+    return `<pre class="bg-red-50 p-3 rounded text-red-700">${JSON.stringify(errorData, null, 2)}</pre>`;
 }
 
 // 将批处理渲染逻辑抽取为独立函数
@@ -391,7 +397,7 @@ function renderBatchItem(batch) {
                 ${batch.errors ? `
                     <div class="mt-2 text-red-600">
                         <p class="font-semibold">错误信息:</p>
-                        <p>${batch.errors}</p>
+                        ${renderErrorContent(batch.errors)}
                     </div>
                 ` : ''}
             </div>

@@ -122,6 +122,14 @@ export async function checkBatchStatus(batchId) {
 }
 
 export async function uploadTaskFiles(files, systemPrompt) {
+    // 添加文件大小检查
+    const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
+    for (let file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+            throw new Error(`文件 "${file.name}" 超过1MB大小限制`);
+        }
+    }
+
     const formData = new FormData();
     for (let file of files) {
         formData.append('files', file);
@@ -129,10 +137,9 @@ export async function uploadTaskFiles(files, systemPrompt) {
     
     if (systemPrompt) {
         formData.append('system_prompt', systemPrompt);
-    }else{
+    } else {
         formData.append('system_prompt', 'you are a helpful assistant');
     }   
-    console.log('Uploading with system_prompt:', systemPrompt);
     try {
         const response = await fetch('/api/task/upload', {
             method: 'POST',

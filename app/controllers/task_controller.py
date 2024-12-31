@@ -152,20 +152,29 @@ class TaskController:
         ) -> List[Task]:
             """从文件批量创建任务"""
             try:
+                # 定义文件大小限制 (1MB)
+                MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB in bytes
+                
                 all_tasks = []
                 temp_dir = Path("temp")
                 temp_dir.mkdir(exist_ok=True)
 
-                # 添加更详细的日志
                 self.logger.info("=== Upload Task Debug Info ===")
                 self.logger.info(f"Received system_prompt: {system_prompt!r}")
                 self.logger.info(f"Files count: {len(files)}")
                 
                 for file in files:
                     self.logger.info(f"\nProcessing file: {file.filename}")
-                    file_path = temp_dir / file.filename
-                    content = await file.read()
                     
+                    # 读取文件内容并检查大小
+                    content = await file.read()
+                    if len(content) > MAX_FILE_SIZE:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"File {file.filename} exceeds maximum size of 1MB"
+                        )
+                    
+                    file_path = temp_dir / file.filename
                     async with aiofiles.open(file_path, 'wb') as f:
                         await f.write(content)
                     

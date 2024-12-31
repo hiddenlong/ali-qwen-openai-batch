@@ -18,6 +18,7 @@ export const cancellableStatuses = [
 ];
 
 export const deletableStatuses = [
+    TaskStatus.FAILED,
     TaskStatus.COMPLETED,
     TaskStatus.EXPIRED,
     TaskStatus.CANCELLING,
